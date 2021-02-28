@@ -9,10 +9,10 @@ def _read_file(filename):
                        index_col=0, parse_dates=True, infer_datetime_format=True)
 
 
-GOOG = _read_file('data\\GOOG.csv')
+# GOOG = _read_file('data\\GOOG.csv')
 """DataFrame of daily NASDAQ:GOOG (Google/Alphabet) stock price data from 2004 to 2013."""
 
-EURUSD = _read_file('data\\EURUSD.csv')
+# EURUSD = _read_file('data\\EURUSD.csv')
 """DataFrame of hourly EUR/USD forex data from April 2017 to February 2018."""
 
 N225_2020 = _read_file('data\\%5EN225_2018-12-01_2019-12-31.csv')
