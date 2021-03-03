@@ -17,6 +17,7 @@ class OhclvTechnicalAnalyzeCalculator():
         h = np.array(df_ohclv['High'].fillna(method='ffill'))
         l = np.array(df_ohclv['Low'].fillna(method='ffill'))
         c = np.array(df_ohclv['Close'].fillna(method='ffill'))
+        v = np.array(df_ohclv['Volume'].fillna(method='ffill'))
 
         # Simple Moving Average 5
         df_ohclv['Sma5'] = ta.SMA(c, timeperiod=5)
@@ -72,6 +73,9 @@ class OhclvTechnicalAnalyzeCalculator():
         ary_SdBlaTp = []
         ary_SdBlaTm = []
 
+        # MFI
+        df_ohclv['MFI'] = ta.MFI(h, l, c, v)
+
         # 自分でループしないと計算できないヤツラ
         for idx in range(df_ohclv.shape[0]):
             if idx == 0:
@@ -113,16 +117,16 @@ class OhclvTechnicalAnalyzeCalculator():
                 else:
                     ary_Sar.append(0)
 
-            #標準偏差ボラティリティトレードモデル
+            # 標準偏差ボラティリティトレードモデル
             if ary_StdDev[idx] > ary_StdDev[idx - 1] and \
                     ary_Adx[idx] > ary_Adx[idx - 1] and \
-                c[idx] >= ary_uband[idx]:
+                    c[idx] >= ary_uband[idx]:
                 ary_SdBlaT.append(1)
                 ary_SdBlaTp.append(1)
                 ary_SdBlaTm.append(0)
             elif ary_StdDev[idx] > ary_StdDev[idx - 1] and \
                     ary_Adx[idx] > ary_Adx[idx - 1] and \
-                c[idx] <= ary_lband[idx]:
+                    c[idx] <= ary_lband[idx]:
                 ary_SdBlaT.append(-1)
                 ary_SdBlaTp.append(0)
                 ary_SdBlaTm.append(1)
