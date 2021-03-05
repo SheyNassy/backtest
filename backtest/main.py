@@ -120,14 +120,16 @@ ohlcv_df = ohlcv_df.set_index('Timestamp')
 # print(stats)
 # # bt.plot()
 
-# bt = Backtest(ohlcv_df, StdDevVolaModel, cash=100000000,
-#               exclusive_orders=True)
-# stats = bt.run()
-# print(stats)
-# # bt.plot()
-
-bt = Backtest(ohlcv_df, TrendBalancePointSystem, cash=100000000,
+bt = Backtest(ohlcv_df, StdDevVolaModel, cash=100000000,
               exclusive_orders=True)
 stats = bt.run()
 print(stats)
+print(stats.array[29])
 # bt.plot()
+
+# bt = Backtest(ohlcv_df, TrendBalancePointSystem, cash=100000000,
+#               exclusive_orders=True)
+# stats = bt.run()
+# print(stats.array[29])
+# print(stats)
+# # bt.plot()
