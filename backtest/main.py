@@ -22,7 +22,7 @@ class VolatilitySystem(Strategy):
         elif self.data.SarT[-1] < 0 and \
                 self.data.SarT[-2] >= 0:
             self.position.close()
-            self.sell()
+            # self.sell()
 
 
 class StdDevVolaModel(Strategy):
@@ -32,14 +32,43 @@ class StdDevVolaModel(Strategy):
         # self.ma2 = self.I(SMA, price, 20)
 
     def next(self):
-        if self.data.SdBlaT[-1] > 0 and \
-                self.data.SdBlaT[-2] <= 0:
+        if self.data.SdBlaT[-1] > 0 and self.data.SdBlaT[-2] <= 0:
             self.position.close()
             self.buy()
-        elif self.data.SdBlaT[-1] < 0 and \
-                self.data.SdBlaT[-2] >= 0:
+        elif self.data.SdBlaT[-1] <= 0 and self.data.SdBlaT[-2] > 0:
             self.position.close()
-            self.sell()
+            # self.sell()
+
+
+class TrendBalancePointSystem(Strategy):
+    def init(self):
+        price = self.data.Close
+        # self.ma1 = self.I(SMA, price, 10)
+        # self.ma2 = self.I(SMA, price, 20)
+
+    def next(self):
+        flg_hold = False
+        if self.position.is_long:
+            if self.data.StpB[-1] > self.data.Close[-1]:
+                self.position.close()
+            elif self.data.PrfB[-1] < self.data.Close[-1]:
+                self.position.close()
+            else:
+                flg_hold = True
+
+        if self.position.is_short:
+            if self.data.StpS[-1] > self.data.Close[-1]:
+                self.position.close()
+            elif self.data.PrfS[-1] < self.data.Close[-1]:
+                self.position.close()
+            else:
+                flg_hold = True
+
+        if flg_hold == False:
+            if self.data.TbpT[-1] > 0:
+                self.buy()
+            elif self.data.TbpT[-1] < 0:
+                self.sell()
 
 
 def get_url(MeigaraCode, DateTimeFrom, DateTimeTo, Piriod):
@@ -54,11 +83,13 @@ def get_url(MeigaraCode, DateTimeFrom, DateTimeTo, Piriod):
 
 
 print("Start")
-str_mei = "BTC-JPY"
-# str_mei = "%5EN225" #日経225
-str_dtf = "2020-02-01"
-str_dtt = "2020-02-28"
-str_url = get_url(str_mei, str_dtf, str_dtt, "1h")
+# str_mei = "1571.T" # 日経インバ
+# str_mei = "1545.T" # NASDAQ ETF
+# str_mei = "BTC-JPY"
+str_mei = "%5EN225"  # 日経225
+str_dtf = "2021-01-01"
+str_dtt = "2021-03-05"
+str_url = get_url(str_mei, str_dtf, str_dtt, "1d")
 str_csv = str_mei + "_" + str_dtf + "_" + str_dtt + ".csv"
 readObj = urllib.request.urlopen(str_url)
 response = readObj.read()
@@ -75,17 +106,28 @@ ohlcv_df["Volume"] = np.array(ohlcv_json["chart"]["result"][0]["indicators"]["qu
 # 本家のほうがDataFrame渡しになったら変える
 ohlcv_df = OhclvTechnicalAnalyzeCalculator.calc(ohlcv_df.values.tolist())
 
+# CSV 保存
+ohlcv_df.to_csv("data\\" + str_mei + ".csv", index=False)
+
 # DateTime列をIndexにする
 ohlcv_df = ohlcv_df.set_index('Timestamp')
 
-bt = Backtest(ohlcv_df, VolatilitySystem, cash=100000000,
-              exclusive_orders=True)
-stats = bt.run()
-print(stats)
-bt.plot()
+# BackTest実行
 
-bt = Backtest(ohlcv_df, StdDevVolaModel, cash=100000000,
+# bt = Backtest(ohlcv_df, VolatilitySystem, cash=100000000,
+#               exclusive_orders=True)
+# stats = bt.run()
+# print(stats)
+# # bt.plot()
+
+# bt = Backtest(ohlcv_df, StdDevVolaModel, cash=100000000,
+#               exclusive_orders=True)
+# stats = bt.run()
+# print(stats)
+# # bt.plot()
+
+bt = Backtest(ohlcv_df, TrendBalancePointSystem, cash=100000000,
               exclusive_orders=True)
 stats = bt.run()
 print(stats)
-bt.plot()
+# bt.plot()
