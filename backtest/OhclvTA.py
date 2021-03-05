@@ -74,7 +74,7 @@ class OhclvTechnicalAnalyzeCalculator():
         ary_SdBlaTm = []
 
         # MFI
-        df_ohclv['MFI'] = ta.MFI(h, l, c, v)
+        df_ohclv['MOM'] = ta.MOM(c)
 
         # 自分でループしないと計算できないヤツラ
         for idx in range(df_ohclv.shape[0]):
