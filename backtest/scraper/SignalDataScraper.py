@@ -10,7 +10,7 @@ import calendar
 class SignalDataScraper:
 
     @classmethod
-    def getData(cls, startDate=None, endDate=None) -> DataFrame:
+    def getData(cls, startDate: datetime = None, endDate: datetime = None) -> DataFrame:
 
         if startDate is None:
             # 開始日指定がない場合 サイト内の一番古い日付

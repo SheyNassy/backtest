@@ -1,6 +1,8 @@
+import pathlib
 import unittest
 from datetime import datetime, timedelta
 
+from backtest.io.CsvRW import CsvRW
 from backtest.scraper.SignalDataScraper import SignalDataScraper
 from backtest.scraper.WebParser import WebParser
 from backtest.scraper.WebScraper import WebScraper
@@ -8,14 +10,11 @@ from backtest.scraper.WebScraper import WebScraper
 
 class MyTestCase(unittest.TestCase):
     def test_something(self):
+        # d = datetime.today() - timedelta(days=2)
+        # df = SignalDataScraper.getData(startDate=d)
         df = SignalDataScraper.getData()
-        # t = WebScraper.getIdFilteredContent('https://realtime-chart.com/ja/bitflyer/resultday_20210312.html', 'tbldtl')
-        # WebParser.parseTable(t)
-        # s = 'str'
-        # l = len(s)
-        # print(l)
-        # u = SignalDataScraper.createUrl(datetime.today() - timedelta(days=5))
-        # print(u)
+        path = str(pathlib.Path.cwd().parent) + '\data\signal'
+        CsvRW.createCsv(path, 'BotSignal', df)
         self.assertTrue(True)
 
 
