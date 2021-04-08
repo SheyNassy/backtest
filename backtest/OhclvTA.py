@@ -10,6 +10,7 @@ class OhclvTechnicalAnalyzeCalculator():
                                 columns=['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
         # 欠損値の削除
         df_ohclv = df_ohclv.dropna()
+        df_ohclv.reset_index(drop=True, inplace=True)
 
         # PlotlyとTA-libでテクニカル分析チャートを描く
         # https://akatak.hatenadiary.jp/entry/2019/11/23/220836
@@ -53,12 +54,14 @@ class OhclvTechnicalAnalyzeCalculator():
         df_ohclv['ATR'] = ta.ATR(h, l, c, timeperiod=14)
 
         # SIC (期間中の最大と最小)
-        df_ohclv["SicH"] = pd.Series(c).rolling(window=20).max()
-        df_ohclv["SicL"] = pd.Series(c).rolling(window=20).min()
+        df_ohclv["SicH"] = 0
+        df_ohclv["SicH"] = pd.Series(c).rolling(20).max()
+        df_ohclv["SicL"] = pd.Series(c).rolling(20).min()
 
         # SAR (Stop and Reverse)
-        df_ohclv["SarH"] = df_ohclv["SicH"] - df_ohclv['ATR'] * 3.3
-        df_ohclv["SarL"] = df_ohclv["SicL"] + df_ohclv['ATR'] * 3.3
+        K_ = 3
+        df_ohclv["SarH"] = df_ohclv["SicH"] - df_ohclv['ATR'] * K_
+        df_ohclv["SarL"] = df_ohclv["SicL"] + df_ohclv['ATR'] * K_
 
         # SAR Trend
         ary_SarH = np.array(df_ohclv["SarH"])
