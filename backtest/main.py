@@ -87,8 +87,10 @@ print("Start")
 # str_mei = "1545.T" # NASDAQ ETF
 # str_mei = "BTC-JPY"
 str_mei = "%5EN225"  # 日経225
-str_dtf = "2021-01-01"
-str_dtt = "2021-03-05"
+
+str_dtf = dt(dt.today().year - 3, dt.today().month, 1).strftime('%Y-%m-%d')
+str_dtt = dt(dt.today().year, dt.today().month, dt.today().day - 1).strftime('%Y-%m-%d')
+
 str_url = get_url(str_mei, str_dtf, str_dtt, "1d")
 str_csv = str_mei + "_" + str_dtf + "_" + str_dtt + ".csv"
 readObj = urllib.request.urlopen(str_url)
@@ -114,22 +116,19 @@ ohlcv_df = ohlcv_df.set_index('Timestamp')
 
 # BackTest実行
 
-# bt = Backtest(ohlcv_df, VolatilitySystem, cash=100000000,
-#               exclusive_orders=True)
-# stats = bt.run()
-# print(stats)
-# # bt.plot()
-
-bt = Backtest(ohlcv_df, StdDevVolaModel, cash=100000000,
+bt = Backtest(ohlcv_df, VolatilitySystem, cash=100000000,
               exclusive_orders=True)
-stats = bt.run()
-print(stats)
-print(stats.array[29])
-# bt.plot()
+
+# bt = Backtest(ohlcv_df, StdDevVolaModel, cash=100000000,
+#               exclusive_orders=False)
 
 # bt = Backtest(ohlcv_df, TrendBalancePointSystem, cash=100000000,
 #               exclusive_orders=True)
-# stats = bt.run()
-# print(stats.array[29])
-# print(stats)
-# # bt.plot()
+
+stats = bt.run()
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', None)
+print(stats.array[29][['EntryTime', 'ExitTime', 'EntryPrice', 'ExitPrice', 'ReturnPct']])
+print('- - - - - - - - - - - - - - - - - - - - - - -')
+print(stats)
+# bt.plot()
