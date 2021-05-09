@@ -252,7 +252,7 @@ class TrendBalancePointSystem(Strategy):
                 self.sell()
 
 
-class Nichidai(Strategy):
+class Aiba(Strategy):
     def init(self):
         h = self.data.df['High'].fillna(method='ffill')
         l = self.data.df['Low'].fillna(method='ffill')
@@ -265,13 +265,24 @@ class Nichidai(Strategy):
         # Simple Moving Average 60
         self.data.df['Sma60'] = ta.SMA(c, timeperiod=60)
 
+        # Hanbun
+        ary_Harf = []
         # MovingCycleTrend
         ary_MocT = []
         # 自分でループしないと計算できないヤツラ
         for idx in range(self.data.df.shape[0]):
             if idx == 0:
+                ary_Harf.append(0)
                 ary_MocT.append('None')
             else:
+                # 半分の法則Long
+                # ・ローソク足が5日線の下から上に抜ける(前日終値 < 前日sma5)
+                # ・陽線(始値 < 終値)
+                # ・ろうそく足の実体が半分以上5日線を上抜
+                if self.data.df['Close'][idx - 1] < self.data.df['Sma5'][idx - 1] and \
+                        self.data.df['Open'][idx] < self.data.df['Close'][idx] and \
+                        (self.data.df['Open'][idx] + self.data.df['Close'][idx]) / 2 >= self.data.df['Sma5'][idx]:
+                    ary_Harf.append(1)
                 # 移動平均大循環分析
                 if self.data.df['Sma5'][idx] >= self.data.df['Sma20'][idx] >= self.data.df['Sma60'][idx]:
                     ary_MocT.append('ST1')
@@ -441,7 +452,7 @@ ohlcv_df = ohlcv_df.set_index('Timestamp')
 # bt = Backtest(ohlcv_df, StdDevVolaModel, cash=100000000,
 #               exclusive_orders=False)
 
-bt = Backtest(ohlcv_df, Nichidai, cash=100000000,
+bt = Backtest(ohlcv_df, Aiba, cash=100000000,
               exclusive_orders=True)
 
 # BackTest実行
