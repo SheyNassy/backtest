@@ -4,15 +4,16 @@ import numpy as np
 import pandas as pd
 import talib as ta
 from datetime import datetime as dt
+from datetime import timedelta
 from backtesting import Backtest, Strategy
 
 from backtest import YahooF
 
 print("Start")
-str_meigara="%5EN225"   #日経平均
+str_meigara = "%5EN225"  # 日経平均
 
 df_ohlcv_w = YahooF.get_ohlcv_week(str_meigara)  # 週足
-df_ohlcv_d = YahooF.get_ohlcv_day(str_meigara)   # 日足
+df_ohlcv_d = YahooF.get_ohlcv_day(str_meigara)  # 日足
 
 # 週足データ計算
 # 移動平均
@@ -43,7 +44,7 @@ for idx in range(df_ohlcv_w.shape[0]):
     ary_flg_bb.append(flg_bb)
 
     if df_ohlcv_w['Sma13'][idx] > df_ohlcv_w['Sma13'][idx - 1] and \
-       df_ohlcv_w['Sma26'][idx] > df_ohlcv_w['Sma26'][idx - 1]:
+            df_ohlcv_w['Sma26'][idx] > df_ohlcv_w['Sma26'][idx - 1]:
         ary_flg_sma.append(1)
     else:
         ary_flg_sma.append(0)
@@ -53,15 +54,33 @@ df_ohlcv_w['FlgSMA'] = ary_flg_sma
 
 # 日足データ計算
 # 週足データを足しこむ
-for idx in range(df_ohlcv_d.shape[0]):
-    print(df_ohlcv_d.index[idx])
+idxd = 0
+idxw = 0
+df_ohlcv_d['wk_Date'] = ""
+df_ohlcv_d['wk_Open'] = ""
+df_ohlcv_d['wk_Close'] = ""
+df_ohlcv_d['wk_FlgBB'] = ""
+df_ohlcv_d['wk_FlgSMA'] = ""
+for idxd in range(df_ohlcv_d.shape[0]):
+    print("Day:" + df_ohlcv_d.index[idxd].strftime('%Y/%m/%d %H:%M:%S'))
 
-for idx in range(df_ohlcv_w.shape[0]):
-    print(df_ohlcv_w.index[idx])
+    for idxw in range(idxw, df_ohlcv_w.shape[0]):
+        print("Week:" + df_ohlcv_w.index[idxw].strftime('%Y/%m/%d %H:%M:%S'))
+        if (df_ohlcv_w.index[idxw] >= df_ohlcv_d.index[idxd] - timedelta(days=7)) and \
+                (df_ohlcv_w.index[idxw]) < df_ohlcv_d.index[idxd]:
+            print("hit")
+            break
+
+    print("Week:" + df_ohlcv_w.index[idxw].strftime('%Y/%m/%d/%H:%M:%S'))
+    df_ohlcv_d["wk_Date"][idxd] = df_ohlcv_w.index[idxw].strftime('%Y/%m/%d %H:%M:%S')
+    df_ohlcv_d["wk_Open"][idxd] = df_ohlcv_w["Open"][idxw]
+    df_ohlcv_d["wk_Close"][idxd] = df_ohlcv_w["Close"][idxw]
+    df_ohlcv_d["wk_FlgBB"][idxd] = df_ohlcv_w["FlgBB"][idxw]
+    df_ohlcv_d["wk_FlgSMA"][idxd] = df_ohlcv_w["FlgSMA"][idxw]
 
 # CSV 保存
 filename = "data\\" + "Upstairs_" \
            + str_meigara + "_" \
            + dt.today().strftime('%Y-%m-%d_%H%M%S') \
            + ".csv"
-df_ohlcv_w.to_csv(filename, index=True)
+df_ohlcv_d.to_csv(filename, index=True)
