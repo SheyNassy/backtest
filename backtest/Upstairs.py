@@ -66,17 +66,18 @@ for idxd in range(df_ohlcv_d.shape[0]):
 
     for idxw in range(idxw, df_ohlcv_w.shape[0]):
         print("Week:" + df_ohlcv_w.index[idxw].strftime('%Y/%m/%d %H:%M:%S'))
-        if (df_ohlcv_w.index[idxw] >= df_ohlcv_d.index[idxd] - timedelta(days=7)) and \
-                (df_ohlcv_w.index[idxw]) < df_ohlcv_d.index[idxd]:
-            print("hit")
+        if df_ohlcv_w.index[idxw] >= df_ohlcv_d.index[idxd] - timedelta(days=7):
             break
 
-    print("Week:" + df_ohlcv_w.index[idxw].strftime('%Y/%m/%d/%H:%M:%S'))
-    df_ohlcv_d["wk_Date"][idxd] = df_ohlcv_w.index[idxw].strftime('%Y/%m/%d %H:%M:%S')
-    df_ohlcv_d["wk_Open"][idxd] = df_ohlcv_w["Open"][idxw]
-    df_ohlcv_d["wk_Close"][idxd] = df_ohlcv_w["Close"][idxw]
-    df_ohlcv_d["wk_FlgBB"][idxd] = df_ohlcv_w["FlgBB"][idxw]
-    df_ohlcv_d["wk_FlgSMA"][idxd] = df_ohlcv_w["FlgSMA"][idxw]
+        if (df_ohlcv_w.index[idxw] >= df_ohlcv_d.index[idxd] - timedelta(days=14)) and \
+                (df_ohlcv_w.index[idxw] < df_ohlcv_d.index[idxd] - timedelta(days=7)):
+            print("Week:" + df_ohlcv_w.index[idxw].strftime('%Y/%m/%d/%H:%M:%S'))
+            df_ohlcv_d["wk_Date"][idxd] = df_ohlcv_w.index[idxw].strftime('%Y/%m/%d %H:%M:%S')
+            df_ohlcv_d["wk_Open"][idxd] = df_ohlcv_w["Open"][idxw]
+            df_ohlcv_d["wk_Close"][idxd] = df_ohlcv_w["Close"][idxw]
+            df_ohlcv_d["wk_FlgBB"][idxd] = df_ohlcv_w["FlgBB"][idxw]
+            df_ohlcv_d["wk_FlgSMA"][idxd] = df_ohlcv_w["FlgSMA"][idxw]
+            break
 
 # CSV 保存
 filename = "data\\" + "Upstairs_" \

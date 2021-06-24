@@ -211,8 +211,8 @@ class TrendBalancePointSystem(Strategy):
         self.data.df["MF"] = ary_mf
         self.data.df["TR"] = ary_tr
         self.data.df["XB"] = ary_xb
-        # df["TBPp"] = ary_TbppNext
-        # df["TBPm"] = ary_TbpmNext
+        self.data.df["TBPp"] = ary_TbppNext
+        self.data.df["TBPm"] = ary_TbpmNext
         self.data.df["Tbp"] = pd.Series(ary_TbpNext, index=c.index).shift(1)
         self.data.df["TbpT"] = pd.Series(ary_TbpT, index=c.index)
         self.data.df["StpB"] = pd.Series(ary_StpB, index=c.index).shift(1)
@@ -276,13 +276,39 @@ class Aiba(Strategy):
                 ary_MocT.append('None')
             else:
                 # 半分の法則Long
-                # ・ローソク足が5日線の下から上に抜ける(前日終値 < 前日sma5)
                 # ・陽線(始値 < 終値)
                 # ・ろうそく足の実体が半分以上5日線を上抜
-                if self.data.df['Close'][idx - 1] < self.data.df['Sma5'][idx - 1] and \
-                        self.data.df['Open'][idx] < self.data.df['Close'][idx] and \
+                if self.data.df['Open'][idx] < self.data.df['Close'][idx] and \
                         (self.data.df['Open'][idx] + self.data.df['Close'][idx]) / 2 >= self.data.df['Sma5'][idx]:
-                    ary_Harf.append(1)
+                    # ・前日陽線
+                    if self.data.df['Open'][idx - 1] < self.data.df['Close'][idx - 1]:
+                        # ・ローソク足が5日線の下から上に抜ける(前日終値 < 前日sma5)
+                        if self.data.df['Close'][idx - 1] < self.data.df['Sma5'][idx - 1]:
+                            ary_Harf.append(1)
+                        else:
+                            ary_Harf.append(0)
+                    # ・前日陰線
+                    else:
+                        ary_Harf.append(1)
+                # 半分の法則Short
+                # ・ローソク足が5日線の上から下に抜ける(前日終値 > 前日sma5)
+                # ・陰線(始値 > 終値)
+                # ・ろうそく足の実体が半分以上5日線を下抜
+                elif self.data.df['Open'][idx] > self.data.df['Close'][idx] and \
+                        (self.data.df['Open'][idx] + self.data.df['Close'][idx]) / 2 <= self.data.df['Sma5'][idx]:
+                    # ・前日陰線
+                    if self.data.df['Open'][idx - 1] > self.data.df['Close'][idx - 1]:
+                        # ・ローソク足が5日線の上から下に抜ける(前日終値 > 前日sma5)
+                        if self.data.df['Close'][idx - 1] > self.data.df['Sma5'][idx - 1]:
+                            ary_Harf.append(-1)
+                        else:
+                            ary_Harf.append(0)
+                    # ・前日陽線
+                    else:
+                        ary_Harf.append(-1)
+                else:
+                    ary_Harf.append(0)
+
                 # 移動平均大循環分析
                 if self.data.df['Sma5'][idx] >= self.data.df['Sma20'][idx] >= self.data.df['Sma60'][idx]:
                     ary_MocT.append('ST1')
@@ -299,6 +325,8 @@ class Aiba(Strategy):
                 else:
                     ary_MocT.append('None')
 
+        # 半分の法則
+        self.data.df['HarfSign'] = ary_Harf
         # MovingCycleTrend
         self.data.df['MocT'] = ary_MocT
         # CSV 保存
@@ -310,12 +338,18 @@ class Aiba(Strategy):
 
     def next(self):
         if self.position.is_long:
-            # 5日線を2日連続で下回ったら手放す
-            if self.data.df['Close'][-1] < self.data.df['Sma5'][-1]:
-                self.position.close()
+            # PPP
+            if self.data.df['MocT'][-1] == 'ST1':
+                # 5日線を終値で下回ったら
+                if self.data.df['Close'][-1] < self.data.df['Sma5'][-1]:
+                    self.position.close()
+            else:
+                # 陰線
+                if self.data.df['Open'][-1] > self.data.df['Close'][-1]:
+                    self.position.close()
         else:
             # 5日線を半分の法則で上回ったら
-            if (self.data.df['Open'][-1] + self.data.df['Close'][-1]) / 2 > self.data.df['Sma5'][-1]:
+            if self.data.df['HarfSign'][-1] > 0:
                 self.buy()
 
 
@@ -362,79 +396,82 @@ ohlcv_df.reset_index(drop=True, inplace=True)
 ohlcv_df = ohlcv_df.set_index('Timestamp')
 
 # ---------------------------------------------
-# sample_df = pd.DataFrame(
-#     pd.to_datetime([
-#         '1977/8/15'
-#         , '1977/8/16'
-#         , '1977/8/17'
-#         , '1977/8/18'
-#         , '1977/8/19'
-#         , '1977/8/22'
-#         , '1977/8/23'
-#         , '1977/8/24'
-#         , '1977/8/25'
-#         , '1977/8/26'
-#         , '1977/8/29'
-#         , '1977/8/30'
-#         , '1977/8/31'
-#         , '1977/9/1'
-#         , '1977/9/2'
-#         , '1977/9/6'
-#         , '1977/9/7'
-#         , '1977/9/8'
-#         , '1977/9/9'
-#         , '1977/9/12'
-#         , '1977/9/13'
-#         , '1977/9/14'
-#         , '1977/9/15'
-#         , '1977/9/16'
-#         , '1977/9/19'
-#         , '1977/9/20'
-#         , '1977/9/21'
-#         , '1977/9/22'
-#         , '1977/9/23'
-#         , '1977/9/26'
-#         , '1977/9/27'
-#         , '1977/9/28'
-#         , '1977/9/29'
-#         , '1977/9/30'
-#         , '1977/10/3'
-#         , '1977/10/4'
-#         , '1977/10/5'
-#         , '1977/10/6'
-#         , '1977/10/7'
-#         , '1977/10/10'
-#         , '1977/10/11'
-#         , '1977/10/12'
-#         , '1977/10/13'
-#         , '1977/10/14']),
-#     columns=["Timestamp"])
-# # DateTime列をIndexにする
-# sample_df = sample_df.set_index('Timestamp')
-#
-# sample_df["Open"] = [
-#     206.2, 206.3, 208.4, 210, 208, 209, 202.5, 195.8, 196, 195, 200, 206, 209, 202.3, 201.3, 205, 205.2, 206.5, 205,
-#     206, 201.5, 200.5, 200.8, 202, 198.7, 198.6, 199.2, 198.5, 196.5, 201, 201, 203.8, 203, 203.6, 205.2, 208.1, 208.5,
-#     210.2, 209.6, 208.7, 207.5, 203, 199, 197
-# ]
-# sample_df["High"] = [
-#     207.8, 208, 212.5, 212.5, 212, 213, 208.5, 204, 203, 202, 206.5, 209, 210.9, 209.3, 205.4, 207, 209.2, 211, 208,
-#     208.2, 206.5, 204.2, 203.3, 204, 201, 201.6, 201.3, 200, 201.8, 203, 206, 206.3, 205.3, 206.3, 209.5, 210.8, 209.9,
-#     213.9, 213.2, 211.5, 211, 208, 203, 202
-# ]
-# sample_df["Low"] = [
-#     206.2, 206.3, 208.4, 210, 208, 209, 202.5, 195.8, 196, 195, 200, 206, 209, 202.3, 201.3, 205, 205.2, 206.5, 205,
-#     206, 201.5, 200.5, 200.8, 202, 198.7, 198.6, 199.2, 198.5, 196.5, 201, 201, 203.8, 203, 203.6, 205.2, 208.1, 208.5,
-#     210.2, 209.6, 208.7, 207.5, 203, 199, 197
-# ]
-# sample_df["Close"] = [
-#     206.8, 206.5, 212, 210.5, 210.8, 209.5, 202.5, 203, 196.3, 199.5, 206, 208.8, 209.3, 202.3, 205.2, 205.5, 208.5,
-#     206.7, 206.5, 206.8, 201.5, 203, 203.2, 202.7, 198.8, 200, 200.6, 198.9, 201.5, 201.5, 206, 204.3, 205.2, 203.8,
-#     209, 208.1, 209.5, 213.4, 211.4, 208.9, 208.1, 203.5, 199.1, 201.6
-# ]
-#
+sample_df = pd.DataFrame(
+    pd.to_datetime([
+        '1977/8/15'
+        , '1977/8/16'
+        , '1977/8/17'
+        , '1977/8/18'
+        , '1977/8/19'
+        , '1977/8/22'
+        , '1977/8/23'
+        , '1977/8/24'
+        , '1977/8/25'
+        , '1977/8/26'
+        , '1977/8/29'
+        , '1977/8/30'
+        , '1977/8/31'
+        , '1977/9/1'
+        , '1977/9/2'
+        , '1977/9/6'
+        , '1977/9/7'
+        , '1977/9/8'
+        , '1977/9/9'
+        , '1977/9/12'
+        , '1977/9/13'
+        , '1977/9/14'
+        , '1977/9/15'
+        , '1977/9/16'
+        , '1977/9/19'
+        , '1977/9/20'
+        , '1977/9/21'
+        , '1977/9/22'
+        , '1977/9/23'
+        , '1977/9/26'
+        , '1977/9/27'
+        , '1977/9/28'
+        , '1977/9/29'
+        , '1977/9/30'
+        , '1977/10/3'
+        , '1977/10/4'
+        , '1977/10/5'
+        , '1977/10/6'
+        , '1977/10/7'
+        , '1977/10/10'
+        , '1977/10/11'
+        , '1977/10/12'
+        , '1977/10/13'
+        , '1977/10/14']),
+    columns=["Timestamp"])
+# DateTime列をIndexにする
+sample_df = sample_df.set_index('Timestamp')
+
+sample_df["Open"] = [
+    206.2, 206.3, 208.4, 210, 208, 209, 202.5, 195.8, 196, 195, 200, 206, 209, 202.3, 201.3, 205, 205.2, 206.5, 205,
+    206, 201.5, 200.5, 200.8, 202, 198.7, 198.6, 199.2, 198.5, 196.5, 201, 201, 203.8, 203, 203.6, 205.2, 208.1, 208.5,
+    210.2, 209.6, 208.7, 207.5, 203, 199, 197
+]
+sample_df["High"] = [
+    207.8, 208, 212.5, 212.5, 212, 213, 208.5, 204, 203, 202, 206.5, 209, 210.9, 209.3, 205.4, 207, 209.2, 211, 208,
+    208.2, 206.5, 204.2, 203.3, 204, 201, 201.6, 201.3, 200, 201.8, 203, 206, 206.3, 205.3, 206.3, 209.5, 210.8, 209.9,
+    213.9, 213.2, 211.5, 211, 208, 203, 202
+]
+sample_df["Low"] = [
+    206.2, 206.3, 208.4, 210, 208, 209, 202.5, 195.8, 196, 195, 200, 206, 209, 202.3, 201.3, 205, 205.2, 206.5, 205,
+    206, 201.5, 200.5, 200.8, 202, 198.7, 198.6, 199.2, 198.5, 196.5, 201, 201, 203.8, 203, 203.6, 205.2, 208.1, 208.5,
+    210.2, 209.6, 208.7, 207.5, 203, 199, 197
+]
+sample_df["Close"] = [
+    206.8, 206.5, 212, 210.5, 210.8, 209.5, 202.5, 203, 196.3, 199.5, 206, 208.8, 209.3, 202.3, 205.2, 205.5, 208.5,
+    206.7, 206.5, 206.8, 201.5, 203, 203.2, 202.7, 198.8, 200, 200.6, 198.9, 201.5, 201.5, 206, 204.3, 205.2, 203.8,
+    209, 208.1, 209.5, 213.4, 211.4, 208.9, 208.1, 203.5, 199.1, 201.6
+]
+
 # bt = Backtest(sample_df, TrendBalancePointSystem, cash=100000000,
 #               exclusive_orders=True)
+
+bt = Backtest(ohlcv_df, TrendBalancePointSystem, cash=100000000,
+              exclusive_orders=True)
 
 # bt = Backtest(ohlcv_df, TrendBalancePointSystem, cash=100000000,
 #               exclusive_orders=True)
@@ -452,8 +489,8 @@ ohlcv_df = ohlcv_df.set_index('Timestamp')
 # bt = Backtest(ohlcv_df, StdDevVolaModel, cash=100000000,
 #               exclusive_orders=False)
 
-bt = Backtest(ohlcv_df, Aiba, cash=100000000,
-              exclusive_orders=True)
+# bt = Backtest(ohlcv_df, Aiba, cash=100000000,
+#               exclusive_orders=True)
 
 # BackTest実行
 stats = bt.run()
